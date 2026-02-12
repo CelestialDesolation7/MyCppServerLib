@@ -128,4 +128,4 @@ compile_commands.json
 CTestTestfile.cmake
 
 EXAMPLE/
-docs/
+CHAT/
