@@ -72,7 +72,6 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # vscode ================================
-.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -126,6 +125,8 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+.cache/
 
 EXAMPLE/
 CHAT/
+TMP/

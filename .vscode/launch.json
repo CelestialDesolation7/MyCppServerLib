@@ -2,34 +2,56 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch Server",
+            "name": "(gdb) 启动 Server",
             "type": "cppdbg",
             "request": "launch",
-            // 这里的 build/server 对应 CMake 生成的可执行文件路径
-            "program": "${workspaceFolder}/build/server", 
+            "program": "${workspaceFolder}/build/server",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": false,
+            "externalConsole": false, // 【建议】改为 false，直接在下方终端显示输出，更稳定
             "MIMode": "gdb",
             "setupCommands": [
                 {
-                    "description": "Enable pretty-printing for gdb",
+                    "description": "为 gdb 启用整齐打印",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            // 【关键】这里必须和 tasks.json 里的 label 完全一致
+            "preLaunchTask": "Build Project" 
         },
         {
-            "name": "(gdb) Launch Client",
+            "name": "(gdb) 启动 Client1",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/client",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "MIMode": "gdb"
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build Project"
+        },
+        {
+            "name": "(gdb) 启动 Client2",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/client",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build Project"
+        }
+    ],
+    // 复合调试：同时启动服务器和客户端
+    "compounds": [
+        {
+            "name": "Server + 2 Clients",
+            "configurations": ["(gdb) 启动 Server", "(gdb) 启动 Client1", "(gdb) 启动 Client2"]
         }
     ]
 }

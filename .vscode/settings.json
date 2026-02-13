@@ -1,4 +1,21 @@
 {
+    // 1. 告诉 C/C++ 插件不要去扫描这些文件夹 (IntelliSense 排除)
+  "C_Cpp.files.exclude": {
+      "**/.vscode": true,
+      "**/.vs": true,
+      "**/.git": true,
+      "**/EXAMPLE": true,  // 排除 EXAMPLE
+      "**/HISTORY": true,  // 排除 HISTORY
+      "**/CHAT": true      // 排除 CHAT
+  },
+
+  // 2. 告诉 VS Code 的文件搜索不要搜这些文件夹 (Ctrl+P 搜不到)
+  "search.exclude": {
+      "**/EXAMPLE": true,
+      "**/HISTORY": true,
+      "**/CHAT": true,
+      "**/build": true
+  },
   "files.associations": {
     "cstring": "cpp"
   },
