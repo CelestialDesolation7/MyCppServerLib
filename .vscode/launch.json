@@ -19,8 +19,7 @@
                     "ignoreFailures": true
                 }
             ],
-            // 【关键】这里必须和 tasks.json 里的 label 完全一致
-            "preLaunchTask": "Build Project" 
+
         },
         {
             "name": "(gdb) 启动 Client1",
@@ -32,7 +31,6 @@
             "cwd": "${workspaceFolder}",
             "externalConsole": false,
             "MIMode": "gdb",
-            "preLaunchTask": "Build Project"
         },
         {
             "name": "(gdb) 启动 Client2",
@@ -44,6 +42,7 @@
             "cwd": "${workspaceFolder}",
             "externalConsole": false,
             "MIMode": "gdb",
+            // 【关键】这里必须和 tasks.json 里的 label 完全一致
             "preLaunchTask": "Build Project"
         }
     ],
