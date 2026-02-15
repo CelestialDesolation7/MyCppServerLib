@@ -57,11 +57,8 @@ void Connection::handleRead() {
 void Connection::handleWrite() {
     if (channel->isWriting()) {
         ssize_t n = ::write(sock->getFd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
-        // 不一定能一次全发出去
         if (n > 0) {
-            // 一部分数据已被输出，对应 Buffer 区域被划入废弃区域
             outputBuffer_.retrieve(n);
-            // 如果全发完了，通知 epoll 本 channel 不再需要发数据
             if (outputBuffer_.readableBytes() == 0) {
                 channel->disableWriting();
             }
