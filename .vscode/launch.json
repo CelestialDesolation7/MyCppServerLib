@@ -10,7 +10,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": false, // 【建议】改为 false，直接在下方终端显示输出，更稳定
+            "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -19,6 +19,8 @@
                     "ignoreFailures": true
                 }
             ],
+            // 这里必须和 tasks.json 里的 label 完全一致
+            "preLaunchTask": "Build Project"
 
         },
         {
@@ -31,6 +33,7 @@
             "cwd": "${workspaceFolder}",
             "externalConsole": false,
             "MIMode": "gdb",
+            "preLaunchTask": "Wait for Server Port"
         },
         {
             "name": "(gdb) 启动 Client2",
@@ -42,8 +45,7 @@
             "cwd": "${workspaceFolder}",
             "externalConsole": false,
             "MIMode": "gdb",
-            // 【关键】这里必须和 tasks.json 里的 label 完全一致
-            "preLaunchTask": "Build Project"
+            "preLaunchTask": "Wait for Server Port"
         }
     ],
     // 复合调试：同时启动服务器和客户端

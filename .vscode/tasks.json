@@ -28,6 +28,28 @@
             },
             "dependsOn": "CMake Configure Debug", // 执行这个任务前，自动先执行 Configure
             "problemMatcher": "$gcc"
+        },
+        // 3. 清理并重新编译
+        {
+            "label": "Clean and Build",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "build",
+                "--target", "clean" // 先清理
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "dependsOn": "Build Project" // 执行这个任务前，自动先执行 Build
+        },
+        // 4. 等待服务器端口可用（用于客户端启动前）
+        {
+            "label": "Wait for Server Port",
+            "type": "shell",
+            "command": "echo '等待服务器端口 8888 可用...' && timeout 10 bash -c 'while ! nc -z localhost 8888 2>/dev/null; do sleep 0.1; done' && echo '服务器端口已就绪！'",
+            "problemMatcher": []
         }
     ]
 }

@@ -51,9 +51,10 @@ include_directories(${SOURCE_DIR}/include)
 
 # 1. 自动收集 common/ 目录下的所有 .cpp 文件
 file(GLOB COMMON_SOURCES "${SOURCE_DIR}/common/*.cpp")
-
+file(GLOB TEST_SOURCES "${SOURCE_DIR}/test/*.cpp")
 # 打印找到的文件，方便调试
 message(STATUS "找到的公共源文件: ${COMMON_SOURCES}")
+message(STATUS "找到的测试源文件: ${TEST_SOURCES}")
 
 # 2. 编译 server 可执行文件 (只用 server.cpp + 公共库)
 add_executable(server 
@@ -66,3 +67,6 @@ add_executable(client
     ${SOURCE_DIR}/client.cpp
     ${COMMON_SOURCES}
 )
+
+add_executable(ThreadPoolTest ${TEST_SOURCES} ${SOURCE_DIR}/common/ThreadPool.cpp)
+target_link_libraries(ThreadPoolTest pthread)
