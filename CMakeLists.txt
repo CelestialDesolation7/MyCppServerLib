@@ -42,6 +42,7 @@ add_compile_options(-Wall -Wextra)
 # 目标配置
 # =========================================================
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/test)
 # 设置头文件搜索路径为 src/，这样 #include "include/Epoll.h" 才能正确找到
 include_directories(${SOURCE_DIR}/include)
 
@@ -51,7 +52,6 @@ include_directories(${SOURCE_DIR}/include)
 
 # 1. 自动收集 common/ 目录下的所有 .cpp 文件
 file(GLOB COMMON_SOURCES "${SOURCE_DIR}/common/*.cpp")
-file(GLOB TEST_SOURCES "${SOURCE_DIR}/test/*.cpp")
 # 打印找到的文件，方便调试
 message(STATUS "找到的公共源文件: ${COMMON_SOURCES}")
 message(STATUS "找到的测试源文件: ${TEST_SOURCES}")
@@ -68,5 +68,8 @@ add_executable(client
     ${COMMON_SOURCES}
 )
 
-add_executable(ThreadPoolTest ${TEST_SOURCES} ${SOURCE_DIR}/common/ThreadPool.cpp)
+add_executable(StressTest ${TEST_DIR}/StressTest.cpp ${SOURCE_DIR}/common/util.cpp ${SOURCE_DIR}/common/Buffer.cpp ${SOURCE_DIR}/common/Socket.cpp ${SOURCE_DIR}/common/InetAddress.cpp)
+target_link_libraries(StressTest pthread)
+
+add_executable(ThreadPoolTest ${TEST_DIR}/ThreadPoolTest.cpp ${SOURCE_DIR}/common/ThreadPool.cpp)
 target_link_libraries(ThreadPoolTest pthread)
