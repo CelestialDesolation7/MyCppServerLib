@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 class Connection;
 class InetAddress;
@@ -11,12 +12,13 @@ class ThreadPool;
 
 class Server {
   private:
-    Eventloop *loop;
+    Eventloop *mainReactor;
     Acceptor *acceptor;
     // 保存所有的连接
     // 我们的服务器终于封装了几乎所有系统细节，变得符合直觉
     std::map<int, Connection *> connection;
     ThreadPool *threadPool;
+    std::vector<Eventloop *> subReactors;
 
   public:
     Server(Eventloop *_loop);
