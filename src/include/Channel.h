@@ -20,9 +20,17 @@ class Channel {
     ~Channel();
 
     void handleEvent(); // 处理事件
+
+    void enableET();
+    void disableET();
+
     void enableReading();
+    void disableReading();
+
     void enableWriting();
     void disableWriting();
+
+    void disableAll();
     bool isWriting();
 
     int getFd();

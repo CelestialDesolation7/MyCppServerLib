@@ -1,6 +1,7 @@
 #include "Epoll.h"
 #include "Channel.h"
 #include "util.h"
+#include <cerrno>
 #include <cstring>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -33,14 +34,20 @@ void Epoll::updateChannel(Channel *channel) {
         errif(epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1, "epoll add error");
         channel->setInEpoll();
     } else {
-        errif(epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev), "epoll modify error");
+        errif(epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev) == -1, "epoll modify error");
     }
+}
+
+void Epoll::deleteChannel(Channel *channel) {
+    int fd = channel->getFd();
+    errif(epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1, "epoll delete error");
+    channel->setInEpoll(false);
 }
 
 std::vector<Channel *> Epoll::poll(int timeout) {
     std::vector<Channel *> activeChannels;
     int nfds = epoll_wait(epfd, events, MAX_EVENTS, timeout);
-    errif(nfds == -1, "epoll wait error");
+    errif(nfds == -1 && errno != EINTR, "epoll wait error");
 
     for (int i = 0; i < nfds; ++i) {
         Channel *ch = (Channel *)events[i].data.ptr;
