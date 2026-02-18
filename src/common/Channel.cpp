@@ -4,61 +4,61 @@
 #include <sys/epoll.h>
 
 Channel::Channel(Eventloop *_loop, int _fd)
-    : loop(_loop), fd(_fd), events(0), revents(0), inEpoll(false) {}
+    : loop_(_loop), fd_(_fd), events_(0), revents_(0), inEpoll_(false) {}
 
 Channel::~Channel() {}
 
 void Channel::enableReading() {
-    events |= EPOLLIN;
-    loop->updateChannel(this);
+    events_ |= EPOLLIN;
+    loop_->updateChannel(this);
 }
 
 void Channel::disableReading() {
-    events &= ~EPOLLIN;
-    loop->updateChannel(this);
+    events_ &= ~EPOLLIN;
+    loop_->updateChannel(this);
 }
 
 void Channel::enableET() {
-    events |= EPOLLET;
-    loop->updateChannel(this);
+    events_ |= EPOLLET;
+    loop_->updateChannel(this);
 }
 
-void Channel::disableET() { events &= ~EPOLLET; }
+void Channel::disableET() { events_ &= ~EPOLLET; }
 
 void Channel::disableWriting() {
-    events &= ~EPOLLOUT;
-    loop->updateChannel(this);
+    events_ &= ~EPOLLOUT;
+    loop_->updateChannel(this);
 }
 
 void Channel::enableWriting() {
-    events |= EPOLLOUT;
-    loop->updateChannel(this);
+    events_ |= EPOLLOUT;
+    loop_->updateChannel(this);
 }
 
 void Channel::disableAll() {
-    events = 0;
-    loop->updateChannel(this);
+    events_ = 0;
+    loop_->updateChannel(this);
 }
 
-bool Channel::isWriting() { return events & EPOLLOUT; }
-int Channel::getFd() { return fd; }
+bool Channel::isWriting() { return events_ & EPOLLOUT; }
+int Channel::getFd() { return fd_; }
 
-uint32_t Channel::getEvents() { return events; }
+uint32_t Channel::getEvents() { return events_; }
 
-uint32_t Channel::getRevents() { return revents; }
+uint32_t Channel::getRevents() { return revents_; }
 
-bool Channel::getInEpoll() { return inEpoll; }
+bool Channel::getInEpoll() { return inEpoll_; }
 
-void Channel::setInEpoll(bool _in) { inEpoll = _in; }
+void Channel::setInEpoll(bool _in) { inEpoll_ = _in; }
 
-void Channel::setRevents(uint32_t _rev) { revents = _rev; }
+void Channel::setRevents(uint32_t _rev) { revents_ = _rev; }
 
 void Channel::handleEvent() {
-    if (revents & (EPOLLIN | EPOLLPRI)) {
+    if (revents_ & (EPOLLIN | EPOLLPRI)) {
         if (readCallback)
             readCallback();
     }
-    if (revents & EPOLLOUT) {
+    if (revents_ & EPOLLOUT) {
         if (writeCallback)
             writeCallback();
     }

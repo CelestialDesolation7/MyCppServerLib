@@ -1,12 +1,14 @@
 #pragma once
 #include "Channel.h"
+#include "Macros.h"
 #include <sys/epoll.h>
 #include <vector>
 
 class Epoll {
+    DISALLOW_COPY_AND_MOVE(Epoll)
   private:
-    int epfd;
-    struct epoll_event *events;
+    int epfd_;
+    struct epoll_event *events_;
 
   public:
     Epoll();

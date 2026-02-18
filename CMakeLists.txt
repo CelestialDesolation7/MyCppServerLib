@@ -1,75 +1,43 @@
 cmake_minimum_required(VERSION 3.21)
 
-# =========================================================
-# 项目配置
-# =========================================================
+# 生成 compile_commands.json，供 VS Code 的 C/C++ 插件和 clang-tidy 使用
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# 启用详细的构建输出
-set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose build output")
-set(CMAKE_MESSAGE_LOG_LEVEL STATUS)
+# 项目信息
+project(MyCppServerLib VERSION 1.0.0 LANGUAGES CXX)
 
-message(STATUS "========================================")
-message(STATUS "  MyCppServerLib 构建配置")
-message(STATUS "========================================")
-message(STATUS "CMake 版本: ${CMAKE_VERSION}")
-message(STATUS "系统: ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION}")
-message(STATUS "处理器: ${CMAKE_SYSTEM_PROCESSOR}")
-
-# =========================================================
-# 项目声明
-# =========================================================
-
-project(MyCppServerLib
-    VERSION 1.0.0
-    DESCRIPTION "A C++ server library for high-performance applications"
-    LANGUAGES CXX
-)
-
-message(STATUS "项目名称: ${PROJECT_NAME}")
-message(STATUS "项目版本: ${PROJECT_VERSION}")
-
-# =========================================================
-# 语言标准设置
-# =========================================================
+# C++ 标准
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # 生成 compile_commands.json 供 IDE 使用
-message(STATUS "C++ 标准: C++${CMAKE_CXX_STANDARD}")
-# 开启所有警告
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 编译选项：开启常用警告
 add_compile_options(-Wall -Wextra)
 
-# =========================================================
-# 目标配置
-# =========================================================
-set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/test)
-# 设置头文件搜索路径为 src/，这样 #include "include/Epoll.h" 才能正确找到
-include_directories(${SOURCE_DIR}/include)
+# 头文件路径
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
 
-# =========================================================
-# 【自动化】自动收集公共库源文件
-# =========================================================
+# 自动查找所有源文件
+file(GLOB_RECURSE SOURCES "src/common/*.cpp" "src/*.cpp")
+# 排除 main 函数所在的 server.cpp 和 client.cpp，因为我们要分别编译它们
+list(FILTER SOURCES EXCLUDE REGEX "src/server.cpp")
+list(FILTER SOURCES EXCLUDE REGEX "src/client.cpp")
+# 同样排除测试文件
+list(FILTER SOURCES EXCLUDE REGEX "src/test/.*")
 
-# 1. 自动收集 common/ 目录下的所有 .cpp 文件
-file(GLOB COMMON_SOURCES "${SOURCE_DIR}/common/*.cpp")
-# 打印找到的文件，方便调试
-message(STATUS "找到的公共源文件: ${COMMON_SOURCES}")
-message(STATUS "找到的测试源文件: ${TEST_SOURCES}")
+# 1. 编译核心库 (可选，也可以像之前一样直接编译进可执行文件，这里做成静态库更规范)
+add_library(NetLib STATIC ${SOURCES})
 
-# 2. 编译 server 可执行文件 (只用 server.cpp + 公共库)
-add_executable(server 
-    ${SOURCE_DIR}/server.cpp
-    ${COMMON_SOURCES}
-)
+# 2. Server
+add_executable(server src/server.cpp)
+target_link_libraries(server NetLib pthread)
 
-# 3. 编译 client 可执行文件 (只用 client.cpp + 公共库)
-add_executable(client 
-    ${SOURCE_DIR}/client.cpp
-    ${COMMON_SOURCES}
-)
+# 3. Client
+add_executable(client src/client.cpp)
+target_link_libraries(client NetLib pthread)
 
-add_executable(StressTest ${TEST_DIR}/StressTest.cpp ${SOURCE_DIR}/common/util.cpp ${SOURCE_DIR}/common/Buffer.cpp ${SOURCE_DIR}/common/Socket.cpp ${SOURCE_DIR}/common/InetAddress.cpp)
-target_link_libraries(StressTest pthread)
+# 4. Tests
+add_executable(StressTest src/test/StressTest.cpp)
+target_link_libraries(StressTest NetLib pthread)
 
-add_executable(ThreadPoolTest ${TEST_DIR}/ThreadPoolTest.cpp ${SOURCE_DIR}/common/ThreadPool.cpp)
-target_link_libraries(ThreadPoolTest pthread)
+add_executable(ThreadPoolTest src/test/ThreadPoolTest.cpp)
+target_link_libraries(ThreadPoolTest NetLib pthread)

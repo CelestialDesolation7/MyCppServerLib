@@ -48,7 +48,7 @@
         {
             "label": "Wait for Server Port",
             "type": "shell",
-            "command": "echo '等待服务器端口 8888 可用...' && timeout 10 bash -c 'while ! nc -z localhost 8888 2>/dev/null; do sleep 0.1; done' && echo '服务器端口已就绪！'",
+            "command": "echo '等待服务器端口 8888 可用...' && timeout 100 bash -c 'while ! nc -z localhost 8888 2>/dev/null; do sleep 0.1; done' && echo '服务器端口已就绪！'",
             "problemMatcher": []
         }
     ]

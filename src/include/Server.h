@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Macros.h"
 #include <map>
 #include <vector>
 
@@ -11,14 +12,15 @@ class Acceptor;
 class ThreadPool;
 
 class Server {
+    DISALLOW_COPY_AND_MOVE(Server)
   private:
-    Eventloop *mainReactor;
-    Acceptor *acceptor;
+    Eventloop *mainReactor_;
+    Acceptor *acceptor_;
     // 保存所有的连接
     // 我们的服务器终于封装了几乎所有系统细节，变得符合直觉
-    std::map<int, Connection *> connection;
-    ThreadPool *threadPool;
-    std::vector<Eventloop *> subReactors;
+    std::map<int, Connection *> connections_;
+    ThreadPool *threadPool_;
+    std::vector<Eventloop *> subReactors_;
 
   public:
     Server(Eventloop *_loop);

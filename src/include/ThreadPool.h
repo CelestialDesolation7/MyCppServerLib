@@ -1,4 +1,5 @@
 #pragma once
+#include "Macros.h"
 #include <condition_variable>
 #include <cstddef>
 #include <functional>
@@ -13,6 +14,7 @@
 #include <vector>
 
 class ThreadPool {
+    DISALLOW_COPY_AND_MOVE(ThreadPool)
   public:
     ThreadPool(size_t thread = 4);
     ~ThreadPool();
@@ -24,14 +26,14 @@ class ThreadPool {
 
   private:
     // 线程数组，默认初始化时被启动
-    std::vector<std::thread> workers;
+    std::vector<std::thread> workers_;
     // 待处理业务逻辑函数
-    std::queue<std::function<void()>> tasks;
+    std::queue<std::function<void()>> tasks_;
 
-    std::mutex queue_mutex;
-    std::condition_variable condition;
+    std::mutex queue_mutex_;
+    std::condition_variable condition_;
     // 当且仅当该字段被外部置为 true 时，线程池析构
-    bool stop;
+    bool stop_;
 };
 
 // 模板实现
@@ -63,10 +65,10 @@ auto ThreadPool::add(F &&f, Args &&...args)
 
     {
         // RAII 锁：构造时调用 mutex.lock()，作用域结束析构时自动 mutex.unlock()
-        std::unique_lock<std::mutex> lock(queue_mutex);
+        std::unique_lock<std::mutex> lock(queue_mutex_);
 
         // 如果线程池已经停止（stop 为 true），则禁止添加新任务，防止任务执行到一半线程池销毁
-        if (stop)
+        if (stop_)
             throw std::runtime_error("[server] enqueue on stopped ThreadPool");
 
         // 我们构建一个 Lambda 表达式：
@@ -77,11 +79,11 @@ auto ThreadPool::add(F &&f, Args &&...args)
         //      当工作线程执行这个 Lambda 时，它解引用指针，调用 packaged_task 的 operator()。
         //      这将触发 bind 对象的执行，并将结果写入 future。
         // 这个 Lambda 的类型是 void()，符合队列的静态类型要求。
-        tasks.emplace([task]() { (*task)(); });
+        tasks_.emplace([task]() { (*task)(); });
     }
 
     // 调用系统调用（如 Linux 的 futex），唤醒一个正在 condition.wait() 的工作线程。
-    condition.notify_one();
+    condition_.notify_one();
 
     // 立即返回 future 对象。
     // 此时任务可能还没开始执行。
