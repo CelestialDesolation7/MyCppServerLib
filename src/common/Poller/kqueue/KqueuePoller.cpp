@@ -79,4 +79,4 @@ std::vector<Channel *> KqueuePoller::poll(int timeout) {
     return activeChannels;
 }
 
-#endif  // __APPLE__
+#endif // __APPLE__
