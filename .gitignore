@@ -125,3 +125,4 @@ EXAMPLE/
 CHAT/
 TMP/
 /.vscode
+.DS_Store
