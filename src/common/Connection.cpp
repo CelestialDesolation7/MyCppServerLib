@@ -34,19 +34,19 @@ void Connection::doRead() {
     if (n == 0) {
         state_ = State::kClosed;
         std::cout << "[server] client fd " << sockfd << " disconnected." << std::endl;
-        // 直接触发发送删除连接请求的 callback
-        close();
+        // 不在此处调用 close()，由 Business() 在所有回调完成后统一触发
+        // 防止 close() → queueInLoop(删除) 后 Main Reactor 立刻析构 Connection
+        // 而 Business() 中 onMessageCallback_(this) 尚未执行完毕，导致 use-after-free
     } else if (n < 0) {
         if (savedErrno != EAGAIN && savedErrno != EWOULDBLOCK) {
             state_ = State::kFailed;
             std::cerr << "[server] read error on fd " << sockfd << ": " << strerror(savedErrno)
                       << std::endl;
-            close();
+            // 同上，由 Business() 统一触发删除
         }
     }
     // 若 n > 0，数据已被读入 inputBuffer
-    // 此函数返回后指令流将转移到 Business() 中调用 onMessageCallback_ 的地方
-    // 在那里执行业务逻辑
+    // 此函数返回后指令流将转移到 Business() 中
 }
 
 void Connection::doWrite() {
@@ -99,8 +99,16 @@ void Connection::send(const std::string &msg) {
 
 void Connection::Business() {
     doRead();
-    if (onMessageCallback_)
-        onMessageCallback_(this);
+    if (state_ == State::kConnected) {
+        // 连接正常：执行业务回调
+        if (onMessageCallback_)
+            onMessageCallback_(this);
+    } else {
+        // 连接已关闭或出错：close() 作为最后一步执行
+        // 此时所有对 this 的访问已结束，close() 触发 queueInLoop(删除) 后
+        // Business() 立刻返回，不再访问任何成员，Main Reactor 可安全析构 Connection
+        close();
+    }
 }
 
 void Connection::Read() { doRead(); }

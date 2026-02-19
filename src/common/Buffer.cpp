@@ -1,6 +1,5 @@
 #include "Buffer.h"
 #include <algorithm>
-#include <bits/types/struct_iovec.h>
 #include <cerrno>
 #include <cstddef>
 #include <sys/types.h>
