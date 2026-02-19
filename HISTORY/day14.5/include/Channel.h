@@ -1,21 +1,19 @@
 #pragma once
 #include "Macros.h"
 #include <functional>
+#include <sys/epoll.h>
 
+class Epoll;
 class Eventloop;
 
 class Channel {
     DISALLOW_COPY_AND_MOVE(Channel)
-  public:
-    static const int READ_EVENT;  // = 1
-    static const int WRITE_EVENT; // = 2
-    static const int ET;          // = 4
   private:
     Eventloop *loop_;
     int fd_;
-    int listen_events_{0};
-    int ready_events_{0};
-    bool inEpoll_{false}; // 标记当前 Channel 是否已经在 Epoll 树上
+    uint32_t events_;  // 希望监听的事件 (EPOLLIN/EPOLLOUT)
+    uint32_t revents_; // 目前正在发生的事件 (returned events)
+    bool inEpoll_;     // 标记当前 Channel 是否已经在 Epoll 树上
     std::function<void()> readCallback;
     std::function<void()> writeCallback;
 
@@ -38,11 +36,11 @@ class Channel {
     bool isWriting();
 
     int getFd();
-    int getListenEvents(); // 原 getEvents()，返回我们的平台中立标志
-    int getReadyEvents();  // 原 getRevents()
+    uint32_t getEvents();
+    uint32_t getRevents();
     bool getInEpoll();
     void setInEpoll(bool _in = true);
-    void setReadyEvents(int ev); // 原 setRevents()，由 Poller 调用
+    void setRevents(uint32_t _rev);
 
     void setReadCallback(std::function<void()> _cb);
     void setWriteCallback(std::function<void()> _cb);

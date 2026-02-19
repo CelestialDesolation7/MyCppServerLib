@@ -3,66 +3,67 @@
 #include <functional>
 #include <sys/epoll.h>
 
-// 使用我们自定义的等价标志位
-const int Channel::READ_EVENT = 1;
-const int Channel::WRITE_EVENT = 2;
-const int Channel::ET = 4;
-
 Channel::Channel(Eventloop *_loop, int _fd)
-    : loop_(_loop), fd_(_fd), listen_events_(0), ready_events_(0), inEpoll_(false) {}
+    : loop_(_loop), fd_(_fd), events_(0), revents_(0), inEpoll_(false) {}
 
 Channel::~Channel() {}
 
 void Channel::enableReading() {
-    listen_events_ |= READ_EVENT;
+    events_ |= EPOLLIN;
     loop_->updateChannel(this);
 }
 
 void Channel::disableReading() {
-    listen_events_ &= ~READ_EVENT;
+    events_ &= ~EPOLLIN;
     loop_->updateChannel(this);
 }
 
 void Channel::enableET() {
-    listen_events_ |= ET;
+    events_ |= EPOLLET;
     loop_->updateChannel(this);
 }
 
-void Channel::disableET() { listen_events_ &= ~ET; }
-
-void Channel::enableWriting() {
-    listen_events_ |= WRITE_EVENT;
-    loop_->updateChannel(this);
-}
+void Channel::disableET() { events_ &= ~EPOLLET; }
 
 void Channel::disableWriting() {
-    listen_events_ &= ~WRITE_EVENT;
+    events_ &= ~EPOLLOUT;
+    loop_->updateChannel(this);
+}
+
+void Channel::enableWriting() {
+    events_ |= EPOLLOUT;
     loop_->updateChannel(this);
 }
 
 void Channel::disableAll() {
-    listen_events_ = 0;
+    events_ = 0;
     loop_->updateChannel(this);
 }
 
-bool Channel::isWriting() { return listen_events_ & WRITE_EVENT; }
+bool Channel::isWriting() { return events_ & EPOLLOUT; }
 int Channel::getFd() { return fd_; }
-int Channel::getListenEvents() { return listen_events_; }
-int Channel::getReadyEvents() { return ready_events_; }
+
+uint32_t Channel::getEvents() { return events_; }
+
+uint32_t Channel::getRevents() { return revents_; }
+
 bool Channel::getInEpoll() { return inEpoll_; }
+
 void Channel::setInEpoll(bool _in) { inEpoll_ = _in; }
-void Channel::setReadyEvents(int ev) { ready_events_ = ev; }
+
+void Channel::setRevents(uint32_t _rev) { revents_ = _rev; }
 
 void Channel::handleEvent() {
-    if (ready_events_ & READ_EVENT) {
+    if (revents_ & (EPOLLIN | EPOLLPRI)) {
         if (readCallback)
             readCallback();
     }
-    if (ready_events_ & WRITE_EVENT) {
+    if (revents_ & EPOLLOUT) {
         if (writeCallback)
             writeCallback();
     }
 }
 
 void Channel::setReadCallback(std::function<void()> _cb) { readCallback = _cb; }
+
 void Channel::setWriteCallback(std::function<void()> _cb) { writeCallback = _cb; }
