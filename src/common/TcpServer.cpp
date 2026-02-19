@@ -87,4 +87,20 @@ void TcpServer::newConnect(std::function<void(Connection *)> fn) {
     newConnectCallback_ = std::move(fn);
 }
 
-TcpServer::~TcpServer() = default;
+void TcpServer::stop() {
+    // 先令所有子 Reactor 退出 loop()，使工作线程从 kevent/epoll_wait 返回
+    // 回到 ThreadPool 的条件变量等待，这样 threadPool_ 析构时 join() 才不会永久阻塞
+    for (auto &sub : subReactors_) {
+        sub->setQuit();
+        sub->wakeup();
+    }
+    // 令主 Reactor 退出 loop()，Start() 函数得以返回
+    mainReactor_->setQuit();
+    mainReactor_->wakeup();
+}
+
+TcpServer::~TcpServer() {
+    // 析构前确保所有 Reactor 已退出，防止 threadPool_ join() 时
+    // 工作线程仍阻塞在 kevent/epoll_wait 内而造成死锁
+    stop();
+}

@@ -1,5 +1,6 @@
 #pragma once
 #include "Macros.h"
+#include <atomic>
 #include <functional>
 #include <mutex>
 #include <sys/types.h>
@@ -14,7 +15,7 @@ class Eventloop {
   private:
     Poller *poller_{nullptr};
     Channel *evtChannel_{nullptr};
-    bool quit_{false};
+    std::atomic<bool> quit_{false};
     std::vector<std::function<void()>> pendingFunctors_;
     std::mutex mutex_;
 
