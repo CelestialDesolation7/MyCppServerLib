@@ -12,6 +12,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 编译选项：开启常用警告
 add_compile_options(-Wall -Wextra)
+if(UNIX AND NOT APPLE)
+    add_compile_definitions(OS_LINUX)
+elseif(APPLE)
+    add_compile_definitions(OS_MACOS)
+endif()
 
 # 头文件路径
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)

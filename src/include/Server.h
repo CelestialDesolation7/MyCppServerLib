@@ -22,7 +22,8 @@ class Server {
     std::map<int, Connection *> connections_;
     ThreadPool *threadPool_;
     std::vector<Eventloop *> subReactors_;
-    std::function<void(Connection *)> onConnectCallback_;
+    std::function<void(Connection *)> onMessageCallback_;
+    std::function<void(Connection *)> newConnectCallback_;
 
   public:
     Server(Eventloop *_loop);
@@ -31,5 +32,7 @@ class Server {
     // 【新增】提供给 Acceptor 的回调函数，当有新连接时调用
     void newConnection(Socket *client_sock, InetAddress *client_addr);
     void deleteConnection(Socket *sock);
-    void onConnect(std::function<void(Connection *)> fn);
+
+    void onMessage(std::function<void(Connection *)> fn);
+    void newConnect(std::function<void(Connection *)> fn);
 };
