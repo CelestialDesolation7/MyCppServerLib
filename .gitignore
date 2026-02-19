@@ -127,3 +127,4 @@ CTestTestfile.cmake
 EXAMPLE/
 CHAT/
 TMP/
+/.vscode
