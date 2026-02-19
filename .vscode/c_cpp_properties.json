@@ -3,8 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/src",
-                "${workspaceFolder}/src/include",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/src/include/**",
                 "/usr/include",
                 "/usr/local/include"
             ],

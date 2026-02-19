@@ -10,27 +10,32 @@ project(MyCppServerLib VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 编译选项：开启常用警告
-add_compile_options(-Wall -Wextra)
-if(UNIX AND NOT APPLE)
-    add_compile_definitions(OS_LINUX)
-elseif(APPLE)
-    add_compile_definitions(OS_MACOS)
-endif()
-
 # 头文件路径
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include/Poller)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include/EventLoop)
 
-# 自动查找所有源文件
-file(GLOB_RECURSE SOURCES "src/common/*.cpp" "src/*.cpp")
-# 排除 main 函数所在的 server.cpp 和 client.cpp，因为我们要分别编译它们
-list(FILTER SOURCES EXCLUDE REGEX "src/server.cpp")
-list(FILTER SOURCES EXCLUDE REGEX "src/client.cpp")
-# 同样排除测试文件
-list(FILTER SOURCES EXCLUDE REGEX "src/test/.*")
+# 扫描所有公共源文件（排除平台专有目录和不需要打包的文件）
+file(GLOB_RECURSE COMMON_SOURCES "src/common/*.cpp")
+list(FILTER COMMON_SOURCES EXCLUDE REGEX ".*/Poller/epoll/.*")
+list(FILTER COMMON_SOURCES EXCLUDE REGEX ".*/Poller/kqueue/.*")
+list(FILTER COMMON_SOURCES EXCLUDE REGEX ".*/EventLoop/epoll/.*")
+list(FILTER COMMON_SOURCES EXCLUDE REGEX ".*/EventLoop/kqueue/.*")
 
-# 1. 编译核心库 (可选，也可以像之前一样直接编译进可执行文件，这里做成静态库更规范)
-add_library(NetLib STATIC ${SOURCES})
+# 按平台加入唯一的那个实现文件
+set(PLATFORM_SOURCES "")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    list(APPEND PLATFORM_SOURCES
+        "src/common/Poller/epoll/EpollPoller.cpp")
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    list(APPEND PLATFORM_SOURCES
+        "src/common/Poller/kqueue/KqueuePoller.cpp")
+else()
+    message(FATAL_ERROR "Unsupported OS: ${CMAKE_SYSTEM_NAME}")
+endif()
+
+# 1. 核心库
+add_library(NetLib STATIC ${COMMON_SOURCES} ${PLATFORM_SOURCES})
 
 # 2. Server
 add_executable(server src/server.cpp)

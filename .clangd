@@ -1,0 +1,15 @@
+---
+# kqueue 文件仅用于 macOS，在 Linux 上无法编译，屏蔽一切诊断
+# PathMatch 是正则表达式列表，同时覆盖 .cpp 和 .h
+If:
+  PathMatch:
+    - .*/kqueue/.*\.cpp
+    - .*/KqueuePoller\.h
+Diagnostics:
+  Suppress: ['*']
+---
+# MyCppServerLib.h 是伞形头文件，unused include 警告无意义
+If:
+  PathMatch: .*/MyCppServerLib\.h
+Diagnostics:
+  UnusedIncludes: None
