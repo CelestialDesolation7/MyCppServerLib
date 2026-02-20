@@ -1,7 +1,6 @@
 #include "Buffer.h"
 #include "InetAddress.h"
 #include "Socket.h"
-#include "util.h"
 #include <cerrno>
 #include <chrono>
 #include <csignal>
@@ -13,7 +12,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <vector>
 
 #ifdef __APPLE__
 #include <sys/event.h>
@@ -358,13 +356,13 @@ int main(int argc, char *argv[]) {
 
     cout << "Test Result: ";
     if (success_count == clients_num && failed_msgs == 0) {
-        cout << "✓ PASSED (All clients completed, all messages verified)" << endl;
+        cout << "[PASSED] (All clients completed, all messages verified)" << endl;
     } else if (interrupted_count > 0) {
-        cout << "✗ FAILED (" << interrupted_count << " clients interrupted)" << endl;
+        cout << "[FAILED] (" << interrupted_count << " clients interrupted)" << endl;
     } else if (failed_msgs > 0) {
-        cout << "✗ FAILED (" << failed_msgs << " messages verification failed)" << endl;
+        cout << "[FAILED] (" << failed_msgs << " messages verification failed)" << endl;
     } else {
-        cout << "✗ FAILED (Unknown reason)" << endl;
+        cout << "[FAILED] (Unknown reason)" << endl;
     }
 
     cout << string(60, '=') << endl;
