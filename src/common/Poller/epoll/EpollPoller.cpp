@@ -13,8 +13,7 @@
 #include <cerrno>
 #include <sys/epoll.h>
 
-EpollPoller::EpollPoller(Eventloop *loop)
-    : Poller(loop), epollFd_(-1), events_(MAX_EVENTS) {
+EpollPoller::EpollPoller(Eventloop *loop) : Poller(loop), epollFd_(-1), events_(MAX_EVENTS) {
     epollFd_ = epoll_create1(0);
     ErrIf(epollFd_ == -1, "epoll create error");
 }

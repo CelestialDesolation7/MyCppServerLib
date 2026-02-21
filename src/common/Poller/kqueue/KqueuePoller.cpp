@@ -12,8 +12,7 @@
 
 #define MAX_EVENTS 1024
 
-KqueuePoller::KqueuePoller(Eventloop *loop)
-    : Poller(loop), kqueueFd_(-1), events_(MAX_EVENTS) {
+KqueuePoller::KqueuePoller(Eventloop *loop) : Poller(loop), kqueueFd_(-1), events_(MAX_EVENTS) {
     kqueueFd_ = kqueue();
     ErrIf(kqueueFd_ == -1, "[server] kqueue create error.");
 }
