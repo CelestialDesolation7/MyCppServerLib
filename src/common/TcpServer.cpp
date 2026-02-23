@@ -73,9 +73,13 @@ void TcpServer::deleteConnection(int fd) {
             std::cout << "[TcpServer] connection fd=" << fd << " deleted." << std::endl;
 
             // 移交到子 reactor 线程销毁：在 doPendingFunctors() 中执行，
-            // 此时当前 poll() 返回的所有事件已处理完毕，Channel* 不再被引用
-            Connection *raw = conn.release();
-            ioLoop->queueInLoop([raw]() { delete raw; });
+            // 此时当前 poll() 返回的所有事件已处理完毕，Channel* 不再被引用。
+            // 用 shared_ptr 包装 unique_ptr 以满足 std::function 对可复制性的要求，
+            // 无需手动 release() + delete，析构由 shared_ptr 引用计数自动触发。
+            std::shared_ptr<Connection> guard(std::move(conn));
+            ioLoop->queueInLoop([guard]() {
+                // guard 在此作用域结束时析构，引用计数归零，Connection 被安全释放
+            });
         }
     });
 }
