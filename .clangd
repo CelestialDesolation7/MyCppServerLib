@@ -1,4 +1,7 @@
 ---
+CompileFlags:
+  CompilationDatabase: build
+---
 # kqueue 文件仅用于 macOS，在 Linux 上无法编译，屏蔽一切诊断
 # PathMatch 是正则表达式列表，同时覆盖 .cpp 和 .h
 If:

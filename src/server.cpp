@@ -1,6 +1,6 @@
-#include "Connection.h"
-#include "SignalHandler.h"
-#include "TcpServer.h"
+#include "include/Connection.h"
+#include "include/SignalHandler.h"
+#include "include/TcpServer.h"
 #include <atomic>
 #include <iostream>
 #include <thread>

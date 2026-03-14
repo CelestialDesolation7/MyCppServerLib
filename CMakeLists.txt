@@ -13,7 +13,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 头文件路径
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include/Poller)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include/EventLoop)
 
 # 扫描所有公共源文件（排除平台专有目录和不需要打包的文件）
 file(GLOB_RECURSE COMMON_SOURCES "src/common/*.cpp")
@@ -51,3 +50,14 @@ target_link_libraries(StressTest NetLib pthread)
 
 add_executable(ThreadPoolTest src/test/ThreadPoolTest.cpp)
 target_link_libraries(ThreadPoolTest NetLib pthread)
+
+# 让 clangd / 其他 LSP 在仓库根目录也能稳定找到编译数据库。
+# 这样项目目录迁移后，只要重新 configure/build 一次，IDE 诊断就会自动恢复。
+if(CMAKE_EXPORT_COMPILE_COMMANDS)
+    add_custom_target(sync_compile_commands ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_BINARY_DIR}/compile_commands.json
+            ${CMAKE_SOURCE_DIR}/compile_commands.json
+        COMMENT "Sync compile_commands.json to workspace root"
+    )
+endif()
