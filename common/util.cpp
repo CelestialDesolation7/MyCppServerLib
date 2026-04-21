@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <fcntl.h>
 
-void errif(bool condition, const char *message) {
+void ErrIf(bool condition, const char *message) {
     if (condition) {
         perror(message);
         exit(EXIT_FAILURE);

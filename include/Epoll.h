@@ -1,5 +1,6 @@
 #pragma once
 #include "Channel.h"
+#include "Macros.h"
 #include <cstdint>
 #include <vector>
 
@@ -10,12 +11,13 @@
 #endif
 
 class Epoll {
+    DISALLOW_COPY_AND_MOVE(Epoll)
   private:
-    int epfd;
+    int epfd_;
 #ifdef __APPLE__
-    struct kevent *events;
+    struct kevent *events_;
 #else
-    struct epoll_event *events;
+    struct epoll_event *events_;
 #endif
 
   public:
@@ -23,5 +25,7 @@ class Epoll {
     ~Epoll();
     void updateChannel(Channel *channel);
     void deleteChannel(Channel *channel);
+
+    // 等待时间发生，返回活跃 Channel 表,而不是 epoll_event
     std::vector<Channel *> poll(int timeout = -1);
 };

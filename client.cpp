@@ -14,7 +14,7 @@
 int main() {
     // 初始化本机socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    errif(sockfd == -1, "[客户端] socket创建失败");
+    ErrIf(sockfd == -1, "[客户端] socket创建失败");
 
     // 初始化服务器地址
     struct sockaddr_in server_addr;
@@ -24,7 +24,7 @@ int main() {
     server_addr.sin_port = htons(8888);
     // 对应server那边的地址
 
-    errif(connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1,
+    ErrIf(connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1,
           "[客户端] 与server建立连接时失败\n");
 
     std::cout << "[客户端] 成功与server建立TCP连接\n";
@@ -60,7 +60,7 @@ int main() {
             break;
         } else if (read_bytes == -1) {
             close(sockfd);
-            errif(true, "[客户端] socket 读取失败");
+            ErrIf(true, "[客户端] socket 读取失败");
         }
     }
 

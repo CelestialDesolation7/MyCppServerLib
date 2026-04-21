@@ -1,4 +1,5 @@
 #pragma once
+#include "Macros.h"
 #include <cstdint>
 #include <functional>
 
@@ -24,12 +25,13 @@ constexpr uint32_t POLLER_PRI = EPOLLPRI;
 #endif
 
 class Channel {
+    DISALLOW_COPY_AND_MOVE(Channel)
   private:
-    Eventloop *loop;
-    int fd;
-    uint32_t events;
-    uint32_t revents;
-    bool inEpoll;
+    Eventloop *loop_;
+    int fd_;
+    uint32_t events_;  // 希望监听的事件 (EPOLLIN/EPOLLOUT)
+    uint32_t revents_; // 目前正在发生的事件 (returned events)
+    bool inEpoll_;     // 标记当前 Channel 是否已经在 Epoll 树上
     std::function<void()> readCallback;
     std::function<void()> writeCallback;
 
@@ -37,7 +39,7 @@ class Channel {
     Channel(Eventloop *_ep, int _fd);
     ~Channel();
 
-    void handleEvent();
+    void handleEvent(); // 处理事件
 
     void enableET();
     void disableET();

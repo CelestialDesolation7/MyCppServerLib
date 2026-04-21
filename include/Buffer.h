@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Macros.h"
 #include <cstddef>
 #include <string>
 #include <sys/types.h>
 #include <vector>
 
 class Buffer {
+    DISALLOW_COPY(Buffer)
   private:
     //     +-------------------+------------------+------------------+
     //     | Prependable Bytes |  Readable Bytes  |  Writable Bytes  |
