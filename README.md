@@ -1,9 +1,11 @@
-# Day 15 — 连接状态机：Connection::State 枚举
+# Day 16 — 异常处理、信号注册与 IO/业务分离
 
 ## 核心变更
-- **Connection::State 枚举**：`kInvalid` / `kConnected` / `kClosed` / `kFailed`，跟踪连接生命周期
-- **新增 `close()` 方法**和 `onConnectCallback_`，连接关闭/出错时自动转移状态并通知 Server
-- **server.cpp** 使用 `server->onConnect(lambda)` 回调，根据 `conn->getState()` 判断连接状态
+- **新增 `Exception.h`**：自定义异常类继承 `std::runtime_error`，带 `ExceptionType` 枚举
+- **新增 `SignalHandler.h`**：`Signal::signal()` 封装 POSIX signal，支持 lambda 注册
+- **新增 `pine.h`**：伞形头文件，一行 include 全部核心模块
+- **Connection IO/业务分离**：`doRead()`/`doWrite()` 处理底层 IO，`Business()` 串联读 + 回调
+- **Server 双回调**：`onMessage()` 处理业务，`newConnect()` 处理连接事件
 
 ## 构建
 
@@ -19,8 +21,11 @@ cmake --build build -j4
 ```
 ├── server.cpp / client.cpp         入口
 ├── include/
-│   ├── Connection.h                新增 State 枚举 / close() / onConnectCallback_
-│   ├── Server.h                    新增 onConnect() setter
+│   ├── Exception.h                 自定义异常（新增）
+│   ├── SignalHandler.h             信号注册（新增）
+│   ├── pine.h                      伞形头文件（新增）
+│   ├── Connection.h                doRead/doWrite/Business 分离
+│   ├── Server.h                    双回调：onMessage + newConnect
 │   └── ...
 ├── common/                         实现文件
 └── test/                           ThreadPoolTest / StressTest

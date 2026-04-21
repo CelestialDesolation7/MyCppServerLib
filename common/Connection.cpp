@@ -17,8 +17,8 @@
 Connection::Connection(Eventloop *_loop, Socket *_sock)
     : loop_(_loop), sock_(_sock), channel_(nullptr) {
     channel_ = new Channel(loop_, sock_->getFd());
-    channel_->setReadCallback(std::bind(&Connection::handleRead, this));
-    channel_->setWriteCallback(std::bind(&Connection::handleWrite, this));
+    channel_->setReadCallback(std::bind(&Connection::doRead, this));
+    channel_->setWriteCallback(std::bind(&Connection::doWrite, this));
     channel_->enableReading();
     channel_->enableET();
     state_ = State::kConnected;
@@ -29,26 +29,27 @@ Connection::~Connection() {
     delete sock_;
 }
 
-void Connection::handleRead() {
+void Connection::doRead() {
     int sockfd = sock_->getFd();
     int savedErrno = 0;
     ssize_t n = inputBuffer_.readFd(sockfd, &savedErrno);
 
-    if (n > 0) {
-        // 读到了数据，业务逻辑处理
-        // 不再硬编码 Echo 业务
-        if (onConnectCallback_)
-            onConnectCallback_(this);
-    } else if (n == 0) {
+    if (n == 0) {
         state_ = State::kClosed;
-        onConnectCallback_(this);
         std::cout << "[server] client fd " << sockfd << " disconnected." << std::endl;
-    } else {
-        state_ = State::kFailed;
-        onConnectCallback_(this);
-        std::cerr << "[server] read error on fd " << sockfd << ": " << strerror(savedErrno)
-                  << std::endl;
+        // 直接触发发送删除连接请求的 callback
+        close();
+    } else if (n < 0) {
+        if (savedErrno != EAGAIN && savedErrno != EWOULDBLOCK) {
+            state_ = State::kFailed;
+            std::cerr << "[server] read error on fd " << sockfd << ": " << strerror(savedErrno)
+                      << std::endl;
+            close();
+        }
     }
+    // 若 n > 0，数据已被读入 inputBuffer
+    // 此函数返回后指令流将转移到 Business() 中调用 onMessageCallback_ 的地方
+    // 在那里执行业务逻辑
 }
 
 Connection::State Connection::getState() const { return state_; }
@@ -58,7 +59,7 @@ void Connection::close() {
         deleteConnectionCallback_(sock_);
 }
 
-void Connection::handleWrite() {
+void Connection::doWrite() {
     if (channel_->isWriting()) {
         ssize_t n = ::write(sock_->getFd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
         // 不一定能一次全发出去
@@ -106,6 +107,12 @@ void Connection::send(const std::string &msg) {
     }
 }
 
+void Connection::Business() {
+    doRead();
+    if (onMessageCallback_)
+        onMessageCallback_(this);
+}
+
 void Connection::setDeleteConnectionCallback(std::function<void(Socket *)> _cb) {
     deleteConnectionCallback_ = _cb;
 }
@@ -114,6 +121,21 @@ void Connection::setOnConnectCallback(std::function<void(Connection *)> const &_
     onConnectCallback_ = _cb;
 }
 
-Buffer *Connection::readBuffer() { return &inputBuffer_; }
+void Connection::setOnMessageCallback(std::function<void(Connection *)> const &cb) {
+    onMessageCallback_ = cb;
+    channel_->setReadCallback(std::bind(&Connection::Business, this));
+}
 
-Buffer *Connection::outBuffer() { return &outputBuffer_; }
+const char *Connection::readBuffer() { return inputBuffer_.peek(); }
+
+const char *Connection::outBuffer() { return outputBuffer_.peek(); }
+
+Socket *Connection::getSocket() { return sock_; }
+
+Buffer *Connection::getInputBuffer() { return &inputBuffer_; }
+
+Buffer *Connection::getOutputBuffer() { return &outputBuffer_; };
+
+void Connection::Read() { doRead(); }
+
+void Connection::Write() { doWrite(); }

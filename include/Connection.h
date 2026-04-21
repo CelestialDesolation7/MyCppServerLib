@@ -21,17 +21,25 @@ class Connection {
     Connection(Eventloop *_loop, Socket *_sock);
     ~Connection();
 
-    void handleRead();
-    void handleWrite();
     void send(const std::string &msg);
-    Buffer *readBuffer();
-    Buffer *outBuffer();
 
+    void setOnMessageCallback(std::function<void(Connection *)> const &cb);
     void setDeleteConnectionCallback(std::function<void(Socket *)> _cb);
     void setOnConnectCallback(std::function<void(Connection *)> const &_cb);
 
-    State getState() const;
     void close();
+
+    // 对外接口，调用 doRead() 或 doWrite()
+    void Read();
+    void Write();
+    void Business(); // Read() 后调用 on_message_callback_
+
+    Socket *getSocket();
+    State getState() const;
+    const char *readBuffer();
+    const char *outBuffer();
+    Buffer *getInputBuffer();
+    Buffer *getOutputBuffer();
 
   private:
     State state_{State::kInvalid};
@@ -44,4 +52,9 @@ class Connection {
     std::function<void(Socket *)> deleteConnectionCallback_;
     // 业务处理回调，当 Buffer 有数据时被调用
     std::function<void(Connection *)> onConnectCallback_;
+    std::function<void(Connection *)> onMessageCallback_;
+
+    // 原本调用 callback 的逻辑从这里分离，现在这两个函数只管IO
+    void doRead();
+    void doWrite();
 };
