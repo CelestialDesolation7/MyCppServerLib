@@ -1,37 +1,21 @@
 #pragma once
 #include "Macros.h"
-#include <cstdint>
 #include <functional>
 
-class Epoll;
 class Eventloop;
-
-#ifdef __APPLE__
-#include <sys/event.h>
-#else
-#include <sys/epoll.h>
-#endif
-
-#ifdef __APPLE__
-constexpr uint32_t POLLER_READ = 1;
-constexpr uint32_t POLLER_WRITE = 4;
-constexpr uint32_t POLLER_ET = 2;
-constexpr uint32_t POLLER_PRI = 8;
-#else
-constexpr uint32_t POLLER_READ = EPOLLIN;
-constexpr uint32_t POLLER_WRITE = EPOLLOUT;
-constexpr uint32_t POLLER_ET = EPOLLET;
-constexpr uint32_t POLLER_PRI = EPOLLPRI;
-#endif
 
 class Channel {
     DISALLOW_COPY_AND_MOVE(Channel)
+  public:
+    static const int READ_EVENT;  // = 1
+    static const int WRITE_EVENT; // = 2
+    static const int ET;          // = 4
   private:
     Eventloop *loop_;
     int fd_;
-    uint32_t events_;  // 希望监听的事件 (EPOLLIN/EPOLLOUT)
-    uint32_t revents_; // 目前正在发生的事件 (returned events)
-    bool inEpoll_;     // 标记当前 Channel 是否已经在 Epoll 树上
+    int listen_events_{0};
+    int ready_events_{0};
+    bool inEpoll_{false}; // 标记当前 Channel 是否已经在 Epoll 树上
     std::function<void()> readCallback;
     std::function<void()> writeCallback;
 
@@ -54,11 +38,11 @@ class Channel {
     bool isWriting();
 
     int getFd();
-    uint32_t getEvents();
-    uint32_t getRevents();
+    int getListenEvents(); // 原 getEvents()，返回我们的平台中立标志
+    int getReadyEvents();  // 原 getRevents()
     bool getInEpoll();
     void setInEpoll(bool _in = true);
-    void setRevents(uint32_t _rev);
+    void setReadyEvents(int ev); // 原 setRevents()，由 Poller 调用
 
     void setReadCallback(std::function<void()> _cb);
     void setWriteCallback(std::function<void()> _cb);

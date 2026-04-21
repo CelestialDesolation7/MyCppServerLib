@@ -1,31 +1,31 @@
 #pragma once
-#include "Channel.h"
 #include "Macros.h"
 #include <functional>
 #include <mutex>
 #include <sys/types.h>
 #include <vector>
 
-#ifndef __APPLE__
-#include <sys/eventfd.h>
-#endif
-
-class Epoll;
+class Poller;
 class Channel;
 
 class Eventloop {
     DISALLOW_COPY_AND_MOVE(Eventloop);
 
   private:
-    int evtfd_;
-#ifdef __APPLE__
-    int wakeupFd_[2]; // pipe pair for macOS
-#endif
-    Epoll *ep_;
-    Channel *evtChannel_;
-    bool quit_;
+    Poller *poller_{nullptr};
+    Channel *evtChannel_{nullptr};
+    bool quit_{false};
     std::vector<std::function<void()>> pendingFunctors_;
     std::mutex mutex_;
+
+#ifdef OS_LINUX
+    int evtfd_;
+#endif
+
+#ifdef OS_MACOS
+    int wakeupReadFd_{-1};
+    int wakeupWriteFd_{-1};
+#endif
 
     void doPendingFunctors();
     void handleWakeup();

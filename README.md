@@ -1,11 +1,10 @@
-# Day 16 — 异常处理、信号注册与 IO/业务分离
+# Day 17 — 跨平台 Poller：用 `#ifdef` 统一 epoll/kqueue
 
 ## 核心变更
-- **新增 `Exception.h`**：自定义异常类继承 `std::runtime_error`，带 `ExceptionType` 枚举
-- **新增 `SignalHandler.h`**：`Signal::signal()` 封装 POSIX signal，支持 lambda 注册
-- **新增 `pine.h`**：伞形头文件，一行 include 全部核心模块
-- **Connection IO/业务分离**：`doRead()`/`doWrite()` 处理底层 IO，`Business()` 串联读 + 回调
-- **Server 双回调**：`onMessage()` 处理业务，`newConnect()` 处理连接事件
+- **删除 `Epoll.h/cpp`**，新增 `Poller.h/cpp`：同一文件内 `#ifdef OS_LINUX` epoll / `#ifdef OS_MACOS` kqueue 两套实现
+- **`Macros.h`** 新增平台检测宏 `OS_LINUX` / `OS_MACOS`
+- **`Channel`** 移除 `<sys/epoll.h>` 依赖，使用自定义标志 `READ_EVENT / WRITE_EVENT / ET`
+- **`Eventloop`** 条件编译 eventfd（Linux）/ pipe（macOS）唤醒机制
 
 ## 构建
 
@@ -21,12 +20,13 @@ cmake --build build -j4
 ```
 ├── server.cpp / client.cpp         入口
 ├── include/
-│   ├── Exception.h                 自定义异常（新增）
-│   ├── SignalHandler.h             信号注册（新增）
-│   ├── pine.h                      伞形头文件（新增）
-│   ├── Connection.h                doRead/doWrite/Business 分离
-│   ├── Server.h                    双回调：onMessage + newConnect
+│   ├── Poller.h                    跨平台 IO 多路复用（新增）
+│   ├── Channel.h                   平台中立标志位
+│   ├── EventLoop.h                 条件编译唤醒机制
+│   ├── Macros.h                    OS_LINUX / OS_MACOS 宏
 │   └── ...
-├── common/                         实现文件
+├── common/
+│   ├── Poller.cpp                  epoll/kqueue 双实现（新增）
+│   └── ...
 └── test/                           ThreadPoolTest / StressTest
 ```
