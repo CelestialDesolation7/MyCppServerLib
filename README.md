@@ -1,14 +1,16 @@
-# Day 01：原始 TCP 服务器
+# Day 02：Echo 循环 + errif 错误检查
 
-最小 TCP 服务器/客户端——纯 POSIX 系统调用，接受单个连接后关闭。
+TCP echo 服务器——可以接收客户端输入并原样返回。
 
 ## 文件结构
 
 ```
-day01/
+day02/
 ├── CMakeLists.txt
-├── server.cpp      ← TCP 服务器：socket → bind → listen → accept → close
-├── client.cpp      ← TCP 客户端：socket → connect → close
+├── server.cpp      ← Echo 服务器：accept → while(read/write)
+├── client.cpp      ← 交互客户端：while(scanf/write/read)
+├── util.h          ← errif() 声明
+├── util.cpp        ← errif() 实现
 └── README.md
 ```
 
@@ -29,10 +31,4 @@ cmake --build build
 ./build/client
 ```
 
-服务器接受一个连接后自动退出。
-
-## 功能
-
-- 服务器在 `127.0.0.1:8888` 上监听
-- 接受一个客户端连接，打印客户端 IP 和端口
-- 无数据收发，连接建立后立即关闭
+在客户端终端输入文字后回车，服务器会回显相同内容。客户端 Ctrl+C 退出。
