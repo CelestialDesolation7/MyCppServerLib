@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(day24 LANGUAGES CXX)
+project(day25 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,6 +21,13 @@ set(LOG_SRC
     common/log/Logger.cpp
 )
 
+set(HTTP_SRC
+    common/http/HttpContext.cpp
+    common/http/HttpRequest.cpp
+    common/http/HttpResponse.cpp
+    common/http/HttpServer.cpp
+)
+
 set(COMMON_SRC
     common/Acceptor.cpp
     common/Buffer.cpp
@@ -36,6 +43,7 @@ set(COMMON_SRC
     common/timer/TimerQueue.cpp
     common/util.cpp
     ${LOG_SRC}
+    ${HTTP_SRC}
     ${POLLER_SRCS}
 )
 
@@ -43,6 +51,9 @@ add_executable(server server.cpp ${COMMON_SRC})
 target_link_libraries(server pthread)
 
 add_executable(client client.cpp common/util.cpp)
+
+add_executable(http_server http_server.cpp ${COMMON_SRC})
+target_link_libraries(http_server pthread)
 
 add_executable(TimerTest test/TimerTest.cpp ${COMMON_SRC})
 target_link_libraries(TimerTest pthread)

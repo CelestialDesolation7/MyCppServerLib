@@ -3,6 +3,7 @@
 #include "Channel.h"
 #include "Macros.h"
 #include "Socket.h"
+#include <any>
 #include <functional>
 #include <memory>
 
@@ -46,6 +47,13 @@ class Connection {
     // 在所有回调设置完成后，通过 queueInLoop 调用此方法来启用 Channel
     void enableInLoop();
 
+    // 通用上下文槽：供上层协议（如 HttpContext）附挂每连接状态数据。
+    // TCP 层对类型一无所知，上层用 std::any_cast<T> 取出。
+    void setContext(std::any ctx) { context_ = std::move(ctx); }
+    std::any &getContext() { return context_; }
+    template <typename T>
+    T *getContextAs() { return std::any_cast<T>(&context_); }
+
   private:
     State state_{State::kInvalid};
     Eventloop *loop_;
@@ -53,6 +61,8 @@ class Connection {
     std::unique_ptr<Channel> channel_;
     Buffer inputBuffer_;
     Buffer outputBuffer_;
+
+    std::any context_; // 上层协议附挂的每连接状态（如 HttpContext）
 
     std::function<void(int)> deleteConnectionCallback_;
     // 业务处理回调，当 Buffer 有数据时被调用

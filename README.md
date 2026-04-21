@@ -1,49 +1,62 @@
-# Day 24 — 异步日志系统（AsyncLogging）
+# Day 25 — HTTP 协议层
 
-构建生产级异步日志框架：同步前端（Logger + LogStream）+ 异步后端（AsyncLogging 双缓冲区）+ 文件写入器（LogFile 自动滚动）。
+在 Reactor 网络库之上叠加 HTTP/1.x 协议栈：有限状态机解析请求（HttpContext）、路由分发（HttpServer）、响应序列化（HttpResponse）。
 
 ## 新增模块
 
 | 文件 | 说明 |
 |------|------|
-| `include/log/LogStream.h` | FixedBuffer + LogStream 流式格式化 |
-| `common/log/LogStream.cpp` | 各类型 operator<< 实现 |
-| `include/log/Logger.h` | 同步日志前端 + LOG_* 宏 |
-| `common/log/Logger.cpp` | 时间戳 + 线程编号 + 级别组装 |
-| `include/log/LogFile.h` | 日志文件写入器（自动滚动） |
-| `common/log/LogFile.cpp` | fopen/fwrite + rollFile |
-| `include/log/AsyncLogging.h` | 异步后端（双缓冲 + 后端写线程） |
-| `common/log/AsyncLogging.cpp` | 前端 append + 后端 threadFunc |
-| `include/Latch.h` | CountdownLatch 启动同步 |
-| `test/LogTest.cpp` | 日志系统测试 |
+| `include/http/HttpRequest.h` | HTTP 请求数据类 |
+| `common/http/HttpRequest.cpp` | 方法/版本转换、reset |
+| `include/http/HttpResponse.h` | HTTP 响应构建器 |
+| `common/http/HttpResponse.cpp` | serialize() 序列化 |
+| `include/http/HttpContext.h` | 请求有限状态机（15 状态） |
+| `common/http/HttpContext.cpp` | 逐字符状态迁移，支持 TCP 粘包 |
+| `include/http/HttpServer.h` | TcpServer 上的 HTTP 封装 |
+| `common/http/HttpServer.cpp` | 连接管理、消息分派、路由 |
+| `http_server.cpp` | 示例 HTTP 服务器（4 路由） |
 
 ## 构建 & 运行
 
 ```bash
-cd HISTORY/day24
+cd HISTORY/day25
 cmake -S . -B build && cmake --build build -j4
 
-# 运行日志测试
-./build/LogTest
+# 运行 HTTP 服务器
+./build/http_server
+# 浏览器访问 http://127.0.0.1:8888/
 
-# 运行 echo 服务器
-./build/server
+# 或用 curl 测试
+curl http://127.0.0.1:8888/hello
+curl -X POST -d "echo this" http://127.0.0.1:8888/echo
+curl "http://127.0.0.1:8888/query?name=world&lang=cpp"
 ```
 
 ## 可执行文件
 
 | 名称 | 说明 |
 |------|------|
-| `server` | Echo 服务器（带定时器 + 日志） |
+| `http_server` | HTTP 示例服务器（/、/hello、/echo、/query） |
+| `server` | Echo TCP 服务器 |
 | `client` | TCP 客户端 |
-| `LogTest` | 日志系统测试（同步 + 异步 + 多线程） |
+| `LogTest` | 日志系统测试 |
 | `TimerTest` | 定时器测试 |
 | `ThreadPoolTest` | 线程池测试 |
 | `StressTest` | 压力测试客户端 |
 
+## HTTP 路由
+
+| 方法 | 路径 | 响应 |
+|------|------|------|
+| GET | `/` | HTML 首页 |
+| GET | `/hello` | `Hello, World!` |
+| POST | `/echo` | 原样返回请求体 |
+| GET | `/query?k=v` | 打印 URL 查询参数 |
+| 其他 | 任意 | 404 Not Found |
+
 ## 核心设计
 
-- **零堆分配前端**：FixedBuffer 栈分配，LOG_INFO 一次调用 ~200ns
-- **双缓冲交换**：前端 append 持锁仅 memcpy，后端无锁批量 fwrite
-- **LOG_DEBUG 零开销**：级别不足时 Logger 不构造，用户表达式不求值
-- **自动滚动**：文件超过 rollSizeBytes 后创建新文件（basename.YYYYMMDD_HHMMSS.log）
+- **状态机解析**：15 个状态逐字符处理，天然支持 TCP 粘包/分包
+- **Connection::context_**：`std::any` 类型擦除，TCP 层与协议层完全解耦
+- **Keep-Alive**：解析完一个请求后 `ctx->reset()` 复用连接
+- **分层架构**：应用层 → 协议层 → 传输层 → 事件层 → 基础层
