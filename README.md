@@ -1,22 +1,24 @@
-# Day 07 — Acceptor 拆分
+# Day 08 — Connection 类
 
 ## 项目状态
 
-在 Day 06（EventLoop + Server + Channel 回调）基础上，引入 **Acceptor** 类：
+在 Day 07（Acceptor 拆分）基础上，引入 **Connection** 类：
 
-- `Acceptor` 封装 bind/listen/accept，通过 `newConnectionCallback` 回调 Server
-- `Server` 精简为创建 Acceptor + 提供 `newConnection()` 回调
+- `Connection` 封装客户端 Socket + Channel + echoRead 回调
+- `Server` 用 `map<int, Connection*>` 管理所有连接的生命周期
+- 客户端断开时通过 `deleteConnectionCallback` 回调链自动清理
 
 ## 文件结构
 
 ```
-day07/
+day08/
 ├── CMakeLists.txt
 ├── server.cpp
 ├── client.cpp
 ├── include/
-│   ├── Acceptor.h      ← 新增
-│   ├── Server.h        ← 持有 Acceptor*
+│   ├── Connection.h    ← 新增
+│   ├── Acceptor.h
+│   ├── Server.h        ← 新增 map + deleteConnection
 │   ├── EventLoop.h
 │   ├── Channel.h
 │   ├── Epoll.h
@@ -24,7 +26,8 @@ day07/
 │   ├── InetAddress.h
 │   └── util.h
 └── common/
-    ├── Acceptor.cpp    ← 新增
+    ├── Connection.cpp  ← 新增
+    ├── Acceptor.cpp
     ├── Server.cpp      ← 修改
     ├── Eventloop.cpp
     ├── Channel.cpp
@@ -44,7 +47,6 @@ cmake --build build
 ./build/client    # 终端 2
 ```
 
-## 已知问题
+## 改进
 
-- 客户端 Channel / Socket 仍有内存泄漏
-- 无 Connection 抽象来管理客户端生命周期
+- 解决了 Day 06-07 的客户端 Socket/Channel 内存泄漏问题

@@ -14,8 +14,6 @@ Acceptor::Acceptor(Eventloop *_loop)
     sock->setnonblocking();
 
     acceptChannel = new Channel(loop, sock->getFd());
-
-    // 只要有新连接请求，Channel 就会调用我们注册的 acceptConnection
     std::function<void()> cb = std::bind(&Acceptor::acceptConnection, this);
     acceptChannel->setCallback(cb);
     acceptChannel->enableReading();

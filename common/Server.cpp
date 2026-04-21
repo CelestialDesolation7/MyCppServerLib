@@ -1,6 +1,6 @@
 #include "Server.h"
 #include "Acceptor.h"
-#include "Channel.h"
+#include "Connection.h"
 #include "InetAddress.h"
 #include "Socket.h"
 
@@ -9,7 +9,6 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
-#include <unistd.h>
 
 #define READ_BUFFER 1024
 
@@ -25,49 +24,27 @@ Server::~Server() { delete acceptor; }
 
 // 这个函数就是以前 accept 之后的那部分逻辑
 void Server::newConnection(Socket *client_sock, InetAddress *client_addr) {
-    // 注意：server_sock 是 Acceptor new 出来传给我们的
-    // 在 Day 7 阶段，为了防止内存泄漏，Server 应该接管这个 Socket 的生命周期
-    // 但因为还没写 TCPConnection 类，这里暂且还是只能看着它泄漏或者简单 delete
-
-    int client_sockfd = client_sock->getFd();
-
-    // 下面的逻辑和 Day 6 的 handleReadEvent 后半部分一样
-    // 为客户端 socket 建立 Channel，设置读回调
-
-    std::cout << "[server] new client fd" << client_sockfd
+    // 注意：clnt_addr 在这里打印完就可以删了，或者保存到 Connection 里（Day 8 先不保存）
+    std::cout << "[server] new client fd" << client_sock->getFd()
               << "! IP:" << inet_ntoa(client_addr->addr.sin_addr) << " PortL "
               << ntohs(client_addr->addr.sin_port) << std::endl;
 
-    // 为新的客户端连接创建 Socket 和 Channel
-    // 还是有内存泄漏，以后处理
+    Connection *conn = new Connection(loop, client_sock);
 
-    Channel *clientChannel = new Channel(loop, client_sockfd);
+    std::function<void(Socket *)> cb =
+        std::bind(&Server::deleteConnection, this, std::placeholders::_1);
+    conn->setDeleteConnectionCallback(cb);
 
-    // 数据处理的lambda函数
-    std::function<void()> cb = [=] {
-        char buf[READ_BUFFER];
-        while (true) {
-            bzero(&buf, sizeof(buf));
-            ssize_t bytes_read = read(client_sockfd, buf, sizeof(buf));
-            if (bytes_read > 0) {
-                std::cout << "[server] message from client fd " << client_sockfd << ": " << buf
-                          << std::endl;
-                write(client_sockfd, buf, bytes_read);
-            } else if (bytes_read == -1 && errno == EINTR) {
-                continue;
-            } else if (bytes_read == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
-                break;
-            } else if (bytes_read == 0) {
-                std::cout << "[server] client fd " << client_sockfd << " disconnected."
-                          << std::endl;
-                close(client_sockfd);
-                // 这里需要 delete clntChannel，但 lambda 里很难删自己
-                // 所以我们暂且不管内存泄漏
-                break;
-            }
-        }
-    };
+    connection[client_sock->getFd()] = conn;
+}
 
-    clientChannel->setCallback(cb);
-    clientChannel->enableReading();
+void Server::deleteConnection(Socket *sock) {
+    int sockfd = sock->getFd();
+    if (connection.find(sockfd) != connection.end()) {
+        Connection *conn = connection[sockfd];
+        connection.erase(sockfd);
+        delete conn;
+        std::cout << "[server] client fd " << sockfd
+                  << " closed, memory resources of the connection is deleted" << std::endl;
+    }
 }
